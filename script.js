@@ -1,44 +1,35 @@
-let isAlarmActive = false;
-let sensitivity = 15;
-let previousX = 0, previousY = 0, previousZ = 0;
+let isMonitoring = false;
+const alertSound = document.getElementById('alertSound');
+const statusText = document.getElementById('status');
 
-document.getElementById("activateBtn").addEventListener("click", () => {
-    isAlarmActive = true;
-    document.getElementById("status").innerText = "Alarm is active!";
-    document.getElementById("activateBtn").style.display = "none";
-    document.getElementById("deactivateBtn").style.display = "inline-block";
-});
-
-document.getElementById("deactivateBtn").addEventListener("click", () => {
-    let password = prompt("Enter Password to Stop Alarm:");
-    if (password === "1234") { // Change this to a secure password system
-        isAlarmActive = false;
-        document.getElementById("alarmSound").pause();
-        document.getElementById("alarmSound").currentTime = 0;
-        document.getElementById("status").innerText = "Alarm Deactivated.";
-        document.getElementById("activateBtn").style.display = "inline-block";
-        document.getElementById("deactivateBtn").style.display = "none";
+document.getElementById('startButton').addEventListener('click', () => {
+    isMonitoring = !isMonitoring;
+    if (isMonitoring) {
+        startMonitoring();
+        statusText.textContent = "Monitoring is on";
     } else {
-        alert("Wrong Password!");
+        stopMonitoring();
+        statusText.textContent = "Monitoring is off";
     }
 });
 
-window.addEventListener("devicemotion", (event) => {
-    if (!isAlarmActive) return;
+function startMonitoring() {
+    window.addEventListener('deviceorientation', handleMotion);
+}
 
-    let x = event.acceleration.x || 0;
-    let y = event.acceleration.y || 0;
-    let z = event.acceleration.z || 0;
+function stopMonitoring() {
+    window.removeEventListener('deviceorientation', handleMotion);
+}
 
-    let diffX = Math.abs(x - previousX);
-    let diffY = Math.abs(y - previousY);
-    let diffZ = Math.abs(z - previousZ);
+function handleMotion(event) {
+    const x = event.beta; // Tilt left/right
+    const y = event.gamma; // Tilt front/back
 
-    if (diffX > sensitivity || diffY > sensitivity || diffZ > sensitivity) {
-        document.getElementById("alarmSound").play();
+    // Check for significant movement
+    if (Math.abs(x) > 10 || Math.abs(y) > 10) {
+        if (!alertSound.paused) {
+            alertSound.currentTime = 0; // Reset sound to start
+        }
+        alertSound.play();
     }
-
-    previousX = x;
-    previousY = y;
-    previousZ = z;
-});
+}
